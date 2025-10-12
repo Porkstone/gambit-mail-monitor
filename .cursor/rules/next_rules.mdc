@@ -1,0 +1,18 @@
+---
+description: Guidelines and best practices for building NextJs projects
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+
+alwaysApply: true
+---
+
+# NextJs guidelines
+## Project guidelines
+
+- ALWAYS use .env for storing environment variables.
+- never create .env.local this will be handled by the devloper.
+```
+# NEXT
+NEXT_PUBLIC_CONVEX_URL=https://animated-fennec-106.convex.cloud
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your key goes here
+
+```

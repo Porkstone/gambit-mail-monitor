@@ -100,4 +100,50 @@ export const getGmailConnectionStatus = query({
   },
 });
 
+export const listBookingMessages = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("messages"),
+      _creationTime: v.number(),
+      subject: v.optional(v.string()),
+      from: v.optional(v.string()),
+      date: v.optional(v.number()),
+      snippet: v.optional(v.string()),
+    })
+  ),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity)
+      return [];
+
+    const clerkUserId = identity.subject;
+    if (!clerkUserId)
+      return [];
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", clerkUserId))
+      .unique();
+
+    if (!user)
+      return [];
+
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_userId_and_date", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .collect();
+
+    return messages.map((m) => ({
+      _id: m._id,
+      _creationTime: m._creationTime,
+      subject: m.subject,
+      from: m.from,
+      date: m.date,
+      snippet: m.snippet,
+    }));
+  },
+});
+
 

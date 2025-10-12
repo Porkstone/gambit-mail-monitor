@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useAction,
   useMutation,
   useQuery,
 } from "convex/react";
@@ -10,6 +11,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { SignUpButton } from "@clerk/nextjs";
 import { SignInButton } from "@clerk/nextjs";
+import { useState } from "react";
 
 export default function Home() {
   return (
@@ -68,6 +70,10 @@ function Content() {
     }) ?? {};
   const addNumber = useMutation(api.myFunctions.addNumber);
   const gmailStatus = useQuery(api.users.getGmailConnectionStatus);
+  const bookingMessages = useQuery(api.users.listBookingMessages);
+  const checkEmails = useAction(api.gmail.checkBookingEmails);
+  const [checking, setChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<string | null>(null);
 
   if (viewer === undefined || numbers === undefined || gmailStatus === undefined) {
     return (
@@ -88,6 +94,30 @@ function Content() {
             <p className="text-sm text-green-600 dark:text-green-400">
               ✓ Gmail connected{gmailStatus.email ? ` (${gmailStatus.email})` : ""}
             </p>
+            <button
+              className="bg-foreground text-background px-4 py-2 rounded-md text-sm hover:opacity-90 disabled:opacity-50"
+              disabled={checking}
+              onClick={async () => {
+                setChecking(true);
+                setCheckResult(null);
+                try {
+                  const result = await checkEmails({});
+                  if (result.success)
+                    setCheckResult(`Found ${result.newMessages} new message(s)`);
+                  else
+                    setCheckResult(`Error: ${result.error || "Unknown error"}`);
+                } catch (err) {
+                  setCheckResult(`Error: ${String(err)}`);
+                } finally {
+                  setChecking(false);
+                }
+              }}
+            >
+              {checking ? "Checking..." : "Check Now"}
+            </button>
+            {checkResult && (
+              <p className="text-xs mt-1">{checkResult}</p>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -101,6 +131,32 @@ function Content() {
           </div>
         )}
       </div>
+
+      {gmailStatus.connected && bookingMessages && bookingMessages.length > 0 && (
+        <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-md">
+          <h2 className="text-lg font-semibold mb-3">Booking.com Emails</h2>
+          <div className="flex flex-col gap-3">
+            {bookingMessages.map((msg) => (
+              <div key={msg._id} className="bg-white dark:bg-slate-900 p-3 rounded border border-slate-300 dark:border-slate-700">
+                <p className="font-semibold text-sm">{msg.subject || "(No subject)"}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                  From: {msg.from || "Unknown"}
+                </p>
+                {msg.date && (
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Date: {new Date(msg.date).toLocaleString()}
+                  </p>
+                )}
+                {msg.snippet && (
+                  <p className="text-xs mt-2 text-slate-700 dark:text-slate-300">
+                    {msg.snippet}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <p>
         Click the button below and open this page in another window - this data
         is persisted in the Convex cloud database!

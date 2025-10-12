@@ -20,4 +20,17 @@ export default defineSchema({
   })
     .index("by_clerkUserId", ["clerkUserId"]) 
     .index("by_email", ["email"]),
+  messages: defineTable({
+    userId: v.id("users"),
+    gmailMessageId: v.string(),
+    threadId: v.string(),
+    subject: v.optional(v.string()),
+    from: v.optional(v.string()),
+    date: v.optional(v.number()),
+    snippet: v.optional(v.string()),
+    body: v.optional(v.string()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_gmailMessageId", ["gmailMessageId"])
+    .index("by_userId_and_date", ["userId", "date"]),
 });

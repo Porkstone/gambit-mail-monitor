@@ -55,7 +55,7 @@ http://localhost:3000/api/auth/gmail/callback
 ## ToDo List
 ```
 [x] Create record in users table after sign-in
-[] Allow user to connect to mailbox
+[x] Allow user to connect to mailbox
 [] Monitor mailbox for booking.com emails
 [] Analyse emails to see if they are reservations and extract data
 [] Create watcher to monitor for better price
