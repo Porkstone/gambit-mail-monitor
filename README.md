@@ -36,9 +36,25 @@ It contains these claims:
 	"phone_number_verified": "{{user.phone_number_verified}}"
 }
 ```
+## Google Cloud Setup
+
+This application relies on the config in in API > Credentials
+```
+learning-chrome-extension - Web Application - 14590076015-baof...
+```
+Specifically the Client_ID, Client_Secret and ..
+Authorised JavaScript origins
+```
+http://localhost:3000 - Dev
+```
+Authorised redirect URIs
+```
+http://localhost:3000/api/auth/gmail/callback
+```
+
 ## ToDo List
 ```
-[] Create record in users table after sign-in
+[x] Create record in users table after sign-in
 [] Allow user to connect to mailbox
 [] Monitor mailbox for booking.com emails
 [] Analyse emails to see if they are reservations and extract data

@@ -14,6 +14,9 @@ export default defineSchema({
     email: v.optional(v.string()),
     firstName: v.optional(v.string()),
     lastName: v.optional(v.string()),
+    gmailAccessToken: v.optional(v.string()),
+    gmailRefreshToken: v.optional(v.string()),
+    gmailTokenExpiry: v.optional(v.number()),
   })
     .index("by_clerkUserId", ["clerkUserId"]) 
     .index("by_email", ["email"]),

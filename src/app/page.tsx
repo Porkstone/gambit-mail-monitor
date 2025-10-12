@@ -67,8 +67,9 @@ function Content() {
       count: 10,
     }) ?? {};
   const addNumber = useMutation(api.myFunctions.addNumber);
+  const gmailStatus = useQuery(api.users.getGmailConnectionStatus);
 
-  if (viewer === undefined || numbers === undefined) {
+  if (viewer === undefined || numbers === undefined || gmailStatus === undefined) {
     return (
       <div className="mx-auto">
         <p>loading... (consider a loading skeleton)</p>
@@ -79,6 +80,27 @@ function Content() {
   return (
     <div className="flex flex-col gap-8 max-w-lg mx-auto">
       <p>Welcome {viewer ?? "Anonymous"}!</p>
+      
+      <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-md">
+        <h2 className="text-lg font-semibold mb-2">Gmail Connection</h2>
+        {gmailStatus.connected ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-green-600 dark:text-green-400">
+              ✓ Gmail connected{gmailStatus.email ? ` (${gmailStatus.email})` : ""}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm">Connect your Gmail account to monitor your emails.</p>
+            <a
+              href="/api/auth/gmail"
+              className="bg-foreground text-background px-4 py-2 rounded-md text-center text-sm hover:opacity-90"
+            >
+              Connect Gmail
+            </a>
+          </div>
+        )}
+      </div>
       <p>
         Click the button below and open this page in another window - this data
         is persisted in the Convex cloud database!
