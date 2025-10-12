@@ -110,6 +110,21 @@ export const listBookingMessages = query({
       from: v.optional(v.string()),
       date: v.optional(v.number()),
       snippet: v.optional(v.string()),
+      analysisResult: v.optional(v.object({
+        isHotelBooking: v.optional(v.boolean()),
+        isCancelable: v.optional(v.boolean()),
+        cancelableUntil: v.optional(v.string()),
+        customerName: v.optional(v.string()),
+        checkInDate: v.optional(v.string()),
+        checkOutDate: v.optional(v.string()),
+        totalCost: v.optional(v.string()),
+        hotelName: v.optional(v.string()),
+        hotelAddress: v.optional(v.string()),
+        pinNumber: v.optional(v.string()),
+        confirmationReference: v.optional(v.string()),
+        modifyBookingLink: v.optional(v.string()),
+      })),
+      analysisError: v.optional(v.string()),
     })
   ),
   handler: async (ctx) => {
@@ -142,6 +157,8 @@ export const listBookingMessages = query({
       from: m.from,
       date: m.date,
       snippet: m.snippet,
+      analysisResult: m.analysisResult,
+      analysisError: m.analysisError,
     }));
   },
 });

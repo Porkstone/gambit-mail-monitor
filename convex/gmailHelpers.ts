@@ -66,3 +66,68 @@ export const storeMessage = internalMutation({
   },
 });
 
+export const getMessage = internalMutation({
+  args: { messageId: v.id("messages") },
+  returns: v.union(
+    v.object({
+      _id: v.id("messages"),
+      body: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message)
+      return null;
+
+    return {
+      _id: message._id,
+      body: message.body,
+    };
+  },
+});
+
+export const storeAnalysisResult = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    analysisResult: v.object({
+      isHotelBooking: v.optional(v.boolean()),
+      isCancelable: v.optional(v.boolean()),
+      cancelableUntil: v.optional(v.string()),
+      customerName: v.optional(v.string()),
+      checkInDate: v.optional(v.string()),
+      checkOutDate: v.optional(v.string()),
+      totalCost: v.optional(v.string()),
+      hotelName: v.optional(v.string()),
+      hotelAddress: v.optional(v.string()),
+      pinNumber: v.optional(v.string()),
+      confirmationReference: v.optional(v.string()),
+      modifyBookingLink: v.optional(v.string()),
+    }),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      analysisResult: args.analysisResult,
+      analysisError: undefined,
+    });
+    console.log("[Gmail] Stored analysis result for message:", args.messageId);
+    return null;
+  },
+});
+
+export const storeAnalysisError = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    error: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      analysisError: args.error,
+    });
+    console.log("[Gmail] Stored analysis error for message:", args.messageId, args.error);
+    return null;
+  },
+});
+

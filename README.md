@@ -56,8 +56,9 @@ http://localhost:3000/api/auth/gmail/callback
 ```
 [x] Create record in users table after sign-in
 [x] Allow user to connect to mailbox
-[] Monitor mailbox for booking.com emails
+[x] Monitor mailbox for booking.com emails
 [] Analyse emails to see if they are reservations and extract data
+    - In progress 
 [] Create watcher to monitor for better price
 [] Send notificaiton email when better price is found
 
