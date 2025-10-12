@@ -15,26 +15,29 @@ export default function Home() {
   return (
     <>
       <main className="p-8 flex flex-col gap-8">
+        {/* If user is signed out, show the sign in form */}
+        <SignedOut>
+
+          <h1 className="text-4xl font-bold text-center">
+            Welcome and thanks for trying out Gambit mail monitor!
+          </h1>
+          <h2 className="text-2xl font-bold text-center">
+            Please sign in to continue.
+          </h2>
+          <SignInForm />
+        </SignedOut>
+
+        {/* If user is signed in, show the home page */}
         <SignedIn>
-        <h1 className="text-4xl font-bold text-center">
-          Home
-        </h1>
-        
+          <h1 className="text-4xl font-bold text-center">
+            Home
+          </h1>
           <div className="mx-auto bg-slate-200 dark:bg-slate-800 px-4 py-3 rounded-md">
             <p className="text-lg font-semibold">Welcome back!</p>
           </div>
           <Content />
         </SignedIn>
-        <SignedOut>
-        <h1 className="text-4xl font-bold text-center">
-          Welcome and thanks for trying out Gambit mail monitor!
-        </h1>
-        <h2 className="text-2xl font-bold text-center">
-          Please sign in to continue.
-        </h2>
-          <span style={{color: "red", alignSelf: "center"}}>Unauthenticated</span>
-          <SignInForm />
-        </SignedOut>
+
       </main>
     </>
   );
@@ -43,12 +46,12 @@ export default function Home() {
 function SignInForm() {
   return (
     <div className="flex flex-col gap-8 w-96 mx-auto">
-      <p>Log in to see the numbers</p>
       <SignInButton mode="modal">
         <button className="bg-foreground text-background px-4 py-2 rounded-md">
           Sign in
         </button>
       </SignInButton>
+      <div className="text-center">OR</div>
       <SignUpButton mode="modal" forceRedirectUrl="/welcome">
         <button className="bg-foreground text-background px-4 py-2 rounded-md">
           Sign up
