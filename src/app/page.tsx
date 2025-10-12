@@ -15,16 +15,23 @@ export default function Home() {
   return (
     <>
       <main className="p-8 flex flex-col gap-8">
-        <h1 className="text-4xl font-bold text-center">
-          Convex + Next.js + Clerk
-        </h1>
         <SignedIn>
+        <h1 className="text-4xl font-bold text-center">
+          Home
+        </h1>
+        
           <div className="mx-auto bg-slate-200 dark:bg-slate-800 px-4 py-3 rounded-md">
             <p className="text-lg font-semibold">Welcome back!</p>
           </div>
           <Content />
         </SignedIn>
         <SignedOut>
+        <h1 className="text-4xl font-bold text-center">
+          Welcome and thanks for trying out Gambit mail monitor!
+        </h1>
+        <h2 className="text-2xl font-bold text-center">
+          Please sign in to continue.
+        </h2>
           <span style={{color: "red", alignSelf: "center"}}>Unauthenticated</span>
           <SignInForm />
         </SignedOut>
