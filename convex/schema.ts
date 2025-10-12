@@ -9,4 +9,12 @@ export default defineSchema({
   numbers: defineTable({
     value: v.number(),
   }),
+  users: defineTable({
+    clerkUserId: v.string(),
+    email: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+  })
+    .index("by_clerkUserId", ["clerkUserId"]) 
+    .index("by_email", ["email"]),
 });
