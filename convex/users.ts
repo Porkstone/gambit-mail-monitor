@@ -104,26 +104,26 @@ export const listBookingMessages = query({
   args: {},
   returns: v.array(
     v.object({
-      _id: v.id("messages"),
+      _id: v.id("bookingEmails"),
       _creationTime: v.number(),
-      subject: v.optional(v.string()),
-      from: v.optional(v.string()),
-      date: v.optional(v.number()),
-      snippet: v.optional(v.string()),
-      analysisResult: v.optional(v.object({
-        isHotelBooking: v.optional(v.boolean()),
-        isCancelable: v.optional(v.boolean()),
-        cancelableUntil: v.optional(v.string()),
-        customerName: v.optional(v.string()),
-        checkInDate: v.optional(v.string()),
-        checkOutDate: v.optional(v.string()),
-        totalCost: v.optional(v.string()),
-        hotelName: v.optional(v.string()),
-        hotelAddress: v.optional(v.string()),
-        pinNumber: v.optional(v.string()),
-        confirmationReference: v.optional(v.string()),
-        modifyBookingLink: v.optional(v.string()),
-      })),
+      subject: v.string(),
+      sender: v.string(),
+      receivedAt: v.number(),
+      bodyHtml: v.optional(v.string()),
+      isProcessed: v.optional(v.boolean()),
+      processedAt: v.optional(v.number()),
+      isHotelBooking: v.optional(v.boolean()),
+      isCancelable: v.optional(v.boolean()),
+      cancelableUntil: v.optional(v.string()),
+      customerName: v.optional(v.string()),
+      checkInDate: v.optional(v.string()),
+      checkOutDate: v.optional(v.string()),
+      totalCost: v.optional(v.string()),
+      hotelName: v.optional(v.string()),
+      hotelAddress: v.optional(v.string()),
+      pinNumber: v.optional(v.string()),
+      confirmationReference: v.optional(v.string()),
+      modifyBookingLink: v.optional(v.string()),
       analysisError: v.optional(v.string()),
     })
   ),
@@ -145,8 +145,8 @@ export const listBookingMessages = query({
       return [];
 
     const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_userId_and_date", (q) => q.eq("userId", user._id))
+      .query("bookingEmails")
+      .withIndex("by_user_and_receivedAt", (q) => q.eq("userId", user._id))
       .order("desc")
       .collect();
 
@@ -154,10 +154,23 @@ export const listBookingMessages = query({
       _id: m._id,
       _creationTime: m._creationTime,
       subject: m.subject,
-      from: m.from,
-      date: m.date,
-      snippet: m.snippet,
-      analysisResult: m.analysisResult,
+      sender: m.sender,
+      receivedAt: m.receivedAt,
+      bodyHtml: m.bodyHtml,
+      isProcessed: m.isProcessed,
+      processedAt: m.processedAt,
+      isHotelBooking: m.isHotelBooking,
+      isCancelable: m.isCancelable,
+      cancelableUntil: m.cancelableUntil,
+      customerName: m.customerName,
+      checkInDate: m.checkInDate,
+      checkOutDate: m.checkOutDate,
+      totalCost: m.totalCost,
+      hotelName: m.hotelName,
+      hotelAddress: m.hotelAddress,
+      pinNumber: m.pinNumber,
+      confirmationReference: m.confirmationReference,
+      modifyBookingLink: m.modifyBookingLink,
       analysisError: m.analysisError,
     }));
   },

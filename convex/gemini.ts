@@ -3,6 +3,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface GeminiAnalysisResult {
   isHotelBooking?: boolean;
@@ -21,7 +22,7 @@ interface GeminiAnalysisResult {
 
 export const analyzeEmailWithGemini = action({
   args: {
-    messageId: v.id("messages"),
+    messageId: v.id("bookingEmails"),
   },
   returns: v.object({
     success: v.boolean(),
@@ -36,15 +37,33 @@ export const analyzeEmailWithGemini = action({
       messageId: args.messageId,
     });
 
-    if (!message)
+    if (!message) {
+      await ctx.runMutation(internal.gmailHelpers.storeAnalysisError, {
+        messageId: args.messageId,
+        error: "Message not found",
+      });
       return { success: false, error: "Message not found" };
+    }
 
-    if (!message.body)
+    const html = message.bodyHtml ?? "";
+    const text = message.body ?? "";
+    const contentToAnalyze = html.trim().length > 0 ? html : text;
+    if (!contentToAnalyze || contentToAnalyze.trim().length === 0) {
+      await ctx.runMutation(internal.gmailHelpers.storeAnalysisError, {
+        messageId: args.messageId,
+        error: "No email content to analyze",
+      });
       return { success: false, error: "No email content to analyze" };
+    }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey)
-      return { success: false, error: "GEMINI_API_KEY not configured" };
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) {
+      await ctx.runMutation(internal.gmailHelpers.storeAnalysisError, {
+        messageId: args.messageId,
+        error: "GOOGLE_GENERATIVE_AI_API_KEY not configured",
+      });
+      return { success: false, error: "GOOGLE_GENERATIVE_AI_API_KEY not configured" };
+    }
 
     const prompt = `Please analyze the following HTML email content and answer these questions. Return your response as a JSON object with the exact field names specified:
 
@@ -64,52 +83,16 @@ export const analyzeEmailWithGemini = action({
 Return ONLY a valid JSON object with these exact field names. If information is not available, use null for that field. For dates, use ISO format (YYYY-MM-DD) when possible.
 
 Email content:
-${message.body}`;
+${contentToAnalyze}`;
 
     try {
-      console.log("[Gemini] Calling Gemini API for message:", args.messageId);
-      
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: prompt,
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              topK: 1,
-              topP: 1,
-              maxOutputTokens: 2048,
-            },
-          }),
-        }
-      );
+      console.log("[Gemini] Calling Gemini API (client) for message:", args.messageId);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[Gemini] API error:", response.status, errorText);
-        await ctx.runMutation(internal.gmailHelpers.storeAnalysisError, {
-          messageId: args.messageId,
-          error: `Gemini API error: ${response.status}`,
-        });
-        return { success: false, error: `Gemini API error: ${response.status}` };
-      }
-
-      const data = await response.json();
-      console.log("[Gemini] Response received");
-
-      const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const textContent = response.text();
       if (!textContent) {
         await ctx.runMutation(internal.gmailHelpers.storeAnalysisError, {
           messageId: args.messageId,
@@ -127,7 +110,21 @@ ${message.body}`;
         return { success: false, error: "Could not extract JSON from response" };
       }
 
-      const analysisResult: GeminiAnalysisResult = JSON.parse(jsonMatch[0]);
+      const raw: GeminiAnalysisResult = JSON.parse(jsonMatch[0]);
+      const analysisResult: GeminiAnalysisResult = {
+        isHotelBooking: raw.isHotelBooking ?? undefined,
+        isCancelable: raw.isCancelable ?? undefined,
+        cancelableUntil: raw.cancelableUntil ?? undefined,
+        customerName: raw.customerName ?? undefined,
+        checkInDate: raw.checkInDate ?? undefined,
+        checkOutDate: raw.checkOutDate ?? undefined,
+        totalCost: raw.totalCost ?? undefined,
+        hotelName: raw.hotelName ?? undefined,
+        hotelAddress: raw.hotelAddress ?? undefined,
+        pinNumber: raw.pinNumber ?? undefined,
+        confirmationReference: raw.confirmationReference ?? undefined,
+        modifyBookingLink: raw.modifyBookingLink ?? undefined,
+      };
       console.log("[Gemini] Analysis result:", analysisResult);
 
       await ctx.runMutation(internal.gmailHelpers.storeAnalysisResult, {

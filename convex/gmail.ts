@@ -79,26 +79,44 @@ export const checkBookingEmails = action({
         const date = dateStr ? new Date(dateStr).getTime() : undefined;
 
         let body = "";
-        if (messageData.payload?.body?.data) {
-          body = Buffer.from(messageData.payload.body.data, "base64").toString("utf-8");
-        } else if (messageData.payload?.parts) {
-          for (const part of messageData.payload.parts) {
-            if (part.mimeType === "text/plain" && part.body?.data) {
-              body = Buffer.from(part.body.data, "base64").toString("utf-8");
-              break;
-            }
+        let bodyHtml = "";
+        const payload = messageData.payload;
+
+        const decodeGmailBase64 = (data: string): string => {
+          const normalized = data.replace(/-/g, "+").replace(/_/g, "/");
+          const pad = normalized.length % 4;
+          const padded = pad ? normalized + "=".repeat(4 - pad) : normalized;
+          return Buffer.from(padded, "base64").toString("utf-8");
+        };
+
+        const extractBodies = (p: any) => {
+          if (!p)
+            return;
+          // If has data directly
+          if (p.body?.data && p.mimeType) {
+            const decoded = decodeGmailBase64(p.body.data);
+            if (p.mimeType === "text/html" || p.mimeType.includes("html"))
+              bodyHtml ||= decoded;
+            if (p.mimeType === "text/plain")
+              body ||= decoded;
           }
-        }
+          // Recurse into parts (multipart/alternative etc.)
+          if (Array.isArray(p.parts)) {
+            for (const child of p.parts)
+              extractBodies(child);
+          }
+        };
+
+        extractBodies(payload);
 
         const stored = await ctx.runMutation(internal.gmailHelpers.storeMessage, {
           userId: user._id,
           gmailMessageId: messageData.id,
-          threadId: messageData.threadId,
-          subject,
-          from,
-          date,
-          snippet: messageData.snippet,
-          body: body.substring(0, 10000),
+          subject: (subject ?? "").toString(),
+          body: (body ?? "").substring(0, 10000),
+          bodyHtml: (bodyHtml ?? "").substring(0, 10000),
+          receivedAt: date ?? Date.now(),
+          sender: (from ?? "").toString(),
         });
 
         if (stored)

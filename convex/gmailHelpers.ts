@@ -32,18 +32,17 @@ export const storeMessage = internalMutation({
   args: {
     userId: v.id("users"),
     gmailMessageId: v.string(),
-    threadId: v.string(),
-    subject: v.optional(v.string()),
-    from: v.optional(v.string()),
-    date: v.optional(v.number()),
-    snippet: v.optional(v.string()),
-    body: v.optional(v.string()),
+    subject: v.string(),
+    body: v.string(),
+    bodyHtml: v.optional(v.string()),
+    receivedAt: v.number(),
+    sender: v.string(),
   },
   returns: v.boolean(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query("messages")
-      .withIndex("by_gmailMessageId", (q) => q.eq("gmailMessageId", args.gmailMessageId))
+      .query("bookingEmails")
+      .withIndex("by_gmail_id", (q) => q.eq("gmailMessageId", args.gmailMessageId))
       .unique();
 
     if (existing) {
@@ -51,15 +50,14 @@ export const storeMessage = internalMutation({
       return false;
     }
 
-    await ctx.db.insert("messages", {
+    await ctx.db.insert("bookingEmails", {
       userId: args.userId,
       gmailMessageId: args.gmailMessageId,
-      threadId: args.threadId,
       subject: args.subject,
-      from: args.from,
-      date: args.date,
-      snippet: args.snippet,
       body: args.body,
+      bodyHtml: args.bodyHtml,
+      receivedAt: args.receivedAt,
+      sender: args.sender,
     });
 
     return true;
@@ -67,11 +65,12 @@ export const storeMessage = internalMutation({
 });
 
 export const getMessage = internalMutation({
-  args: { messageId: v.id("messages") },
+  args: { messageId: v.id("bookingEmails") },
   returns: v.union(
     v.object({
-      _id: v.id("messages"),
+      _id: v.id("bookingEmails"),
       body: v.optional(v.string()),
+      bodyHtml: v.optional(v.string()),
     }),
     v.null()
   ),
@@ -83,13 +82,14 @@ export const getMessage = internalMutation({
     return {
       _id: message._id,
       body: message.body,
+      bodyHtml: message.bodyHtml,
     };
   },
 });
 
 export const storeAnalysisResult = internalMutation({
   args: {
-    messageId: v.id("messages"),
+    messageId: v.id("bookingEmails"),
     analysisResult: v.object({
       isHotelBooking: v.optional(v.boolean()),
       isCancelable: v.optional(v.boolean()),
@@ -108,7 +108,20 @@ export const storeAnalysisResult = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.messageId, {
-      analysisResult: args.analysisResult,
+      isProcessed: true,
+      processedAt: Date.now(),
+      isHotelBooking: args.analysisResult.isHotelBooking,
+      isCancelable: args.analysisResult.isCancelable,
+      cancelableUntil: args.analysisResult.cancelableUntil,
+      customerName: args.analysisResult.customerName,
+      checkInDate: args.analysisResult.checkInDate,
+      checkOutDate: args.analysisResult.checkOutDate,
+      totalCost: args.analysisResult.totalCost,
+      hotelName: args.analysisResult.hotelName,
+      hotelAddress: args.analysisResult.hotelAddress,
+      pinNumber: args.analysisResult.pinNumber,
+      confirmationReference: args.analysisResult.confirmationReference,
+      modifyBookingLink: args.analysisResult.modifyBookingLink,
       analysisError: undefined,
     });
     console.log("[Gmail] Stored analysis result for message:", args.messageId);
@@ -118,12 +131,14 @@ export const storeAnalysisResult = internalMutation({
 
 export const storeAnalysisError = internalMutation({
   args: {
-    messageId: v.id("messages"),
+    messageId: v.id("bookingEmails"),
     error: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.messageId, {
+      isProcessed: true,
+      processedAt: Date.now(),
       analysisError: args.error,
     });
     console.log("[Gmail] Stored analysis error for message:", args.messageId, args.error);

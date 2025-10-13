@@ -12,6 +12,7 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { SignUpButton } from "@clerk/nextjs";
 import { SignInButton } from "@clerk/nextjs";
 import { useState } from "react";
+import MessageCard from "./_components/messageCard";
 
 export default function Home() {
   return (
@@ -72,10 +73,8 @@ function Content() {
   const gmailStatus = useQuery(api.users.getGmailConnectionStatus);
   const bookingMessages = useQuery(api.users.listBookingMessages);
   const checkEmails = useAction(api.gmail.checkBookingEmails);
-  const analyzeEmail = useAction(api.gemini.analyzeEmailWithGemini);
   const [checking, setChecking] = useState(false);
   const [checkResult, setCheckResult] = useState<string | null>(null);
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   if (viewer === undefined || numbers === undefined || gmailStatus === undefined) {
     return (
@@ -139,89 +138,7 @@ function Content() {
           <h2 className="text-lg font-semibold mb-3">Booking.com Emails</h2>
           <div className="flex flex-col gap-3">
             {bookingMessages.map((msg) => (
-              <div key={msg._id} className="bg-white dark:bg-slate-900 p-3 rounded border border-slate-300 dark:border-slate-700">
-                <p className="font-semibold text-sm">{msg.subject || "(No subject)"}</p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  From: {msg.from || "Unknown"}
-                </p>
-                {msg.date && (
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Date: {new Date(msg.date).toLocaleString()}
-                  </p>
-                )}
-                {msg.snippet && (
-                  <p className="text-xs mt-2 text-slate-700 dark:text-slate-300">
-                    {msg.snippet}
-                  </p>
-                )}
-                
-                {!msg.analysisResult && !msg.analysisError && (
-                  <button
-                    className="mt-2 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
-                    disabled={analyzingId === msg._id}
-                    onClick={async () => {
-                      setAnalyzingId(msg._id);
-                      try {
-                        await analyzeEmail({ messageId: msg._id });
-                      } finally {
-                        setAnalyzingId(null);
-                      }
-                    }}
-                  >
-                    {analyzingId === msg._id ? "Analysing..." : "Analyse now"}
-                  </button>
-                )}
-
-                {msg.analysisError && (
-                  <div className="mt-2 p-2 bg-red-100 dark:bg-red-900 rounded text-xs text-red-800 dark:text-red-200">
-                    Error: {msg.analysisError}
-                  </div>
-                )}
-
-                {msg.analysisResult && (
-                  <div className="mt-2 p-2 bg-green-50 dark:bg-green-900 rounded text-xs">
-                    <p className="font-semibold mb-1 text-green-800 dark:text-green-200">Analysis Results:</p>
-                    <div className="space-y-1 text-green-700 dark:text-green-300">
-                      {msg.analysisResult.isHotelBooking !== undefined && (
-                        <p><strong>Hotel Booking:</strong> {msg.analysisResult.isHotelBooking ? "Yes" : "No"}</p>
-                      )}
-                      {msg.analysisResult.hotelName && (
-                        <p><strong>Hotel:</strong> {msg.analysisResult.hotelName}</p>
-                      )}
-                      {msg.analysisResult.customerName && (
-                        <p><strong>Guest:</strong> {msg.analysisResult.customerName}</p>
-                      )}
-                      {msg.analysisResult.checkInDate && (
-                        <p><strong>Check-in:</strong> {msg.analysisResult.checkInDate}</p>
-                      )}
-                      {msg.analysisResult.checkOutDate && (
-                        <p><strong>Check-out:</strong> {msg.analysisResult.checkOutDate}</p>
-                      )}
-                      {msg.analysisResult.totalCost && (
-                        <p><strong>Total Cost:</strong> {msg.analysisResult.totalCost}</p>
-                      )}
-                      {msg.analysisResult.isCancelable !== undefined && (
-                        <p><strong>Cancelable:</strong> {msg.analysisResult.isCancelable ? "Yes" : "No"}</p>
-                      )}
-                      {msg.analysisResult.cancelableUntil && (
-                        <p><strong>Cancel by:</strong> {msg.analysisResult.cancelableUntil}</p>
-                      )}
-                      {msg.analysisResult.confirmationReference && (
-                        <p><strong>Confirmation:</strong> {msg.analysisResult.confirmationReference}</p>
-                      )}
-                      {msg.analysisResult.pinNumber && (
-                        <p><strong>PIN:</strong> {msg.analysisResult.pinNumber}</p>
-                      )}
-                      {msg.analysisResult.hotelAddress && (
-                        <p><strong>Address:</strong> {msg.analysisResult.hotelAddress}</p>
-                      )}
-                      {msg.analysisResult.modifyBookingLink && (
-                        <p><strong>Modify:</strong> <a href={msg.analysisResult.modifyBookingLink} target="_blank" rel="noopener noreferrer" className="underline">Link</a></p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <MessageCard key={msg._id} message={msg} />
             ))}
           </div>
         </div>
