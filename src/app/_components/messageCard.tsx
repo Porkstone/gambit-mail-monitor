@@ -2,11 +2,12 @@
 
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { useState } from "react";
 
 type MessageProps = {
   message: {
-    _id: string;
+    _id: Id<"bookingEmails">;
     _creationTime: number;
     subject: string;
     sender: string;
@@ -32,7 +33,7 @@ type MessageProps = {
 
 export default function MessageCard({ message }: MessageProps) {
   const analyzeEmail = useAction(api.gemini.analyzeEmailWithGemini);
-  const isAnalyzing = false; // keep simple; optimistic UI handled by Convex reactivity
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
   return (
@@ -56,10 +57,22 @@ export default function MessageCard({ message }: MessageProps) {
           className="mt-2 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
           disabled={isAnalyzing}
           onClick={async () => {
-            await analyzeEmail({ messageId: message._id as any });
+            setIsAnalyzing(true);
+            try {
+              await analyzeEmail({ messageId: message._id });
+            } finally {
+              setIsAnalyzing(false);
+            }
           }}
         >
-          {isAnalyzing ? "Analysing..." : "Analyse now"}
+          {isAnalyzing ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
+              Analysing...
+            </span>
+          ) : (
+            "Analyse now"
+          )}
         </button>
       ) : null}
 
@@ -79,39 +92,48 @@ export default function MessageCard({ message }: MessageProps) {
       ) : null}
 
       {message.isProcessed ? (
-        <div className="mt-2 p-2 bg-green-50 dark:bg-green-900 rounded text-xs">
-          <p className="font-semibold mb-1 text-green-800 dark:text-green-200">Analysis Results:</p>
-          <div className="space-y-1 text-green-700 dark:text-green-300">
-            {message.isHotelBooking !== undefined ? (
+        message.isHotelBooking ? (
+          <div className="mt-2 p-2 bg-green-50 dark:bg-green-900 rounded text-xs">
+            <p className="font-semibold mb-1 text-green-800 dark:text-green-200">Analysis Results:</p>
+            <div className="space-y-1 text-green-700 dark:text-green-300">
               <p>
-                <strong>Hotel Booking:</strong> {message.isHotelBooking ? "Yes" : "No"}
+                <strong>Hotel Booking:</strong> Yes
               </p>
-            ) : null}
-            {message.hotelName ? <p><strong>Hotel:</strong> {message.hotelName}</p> : null}
-            {message.customerName ? <p><strong>Guest:</strong> {message.customerName}</p> : null}
-            {message.checkInDate ? <p><strong>Check-in:</strong> {message.checkInDate}</p> : null}
-            {message.checkOutDate ? <p><strong>Check-out:</strong> {message.checkOutDate}</p> : null}
-            {message.totalCost ? <p><strong>Total Cost:</strong> {message.totalCost}</p> : null}
-            {message.isCancelable !== undefined ? (
-              <p>
-                <strong>Cancelable:</strong> {message.isCancelable ? "Yes" : "No"}
-              </p>
-            ) : null}
-            {message.cancelableUntil ? (
-              <p><strong>Cancel by:</strong> {message.cancelableUntil}</p>
-            ) : null}
-            {message.confirmationReference ? (
-              <p><strong>Confirmation:</strong> {message.confirmationReference}</p>
-            ) : null}
-            {message.pinNumber ? <p><strong>PIN:</strong> {message.pinNumber}</p> : null}
-            {message.hotelAddress ? <p><strong>Address:</strong> {message.hotelAddress}</p> : null}
-            {message.modifyBookingLink ? (
-              <p>
-                <strong>Modify:</strong> <a href={message.modifyBookingLink} target="_blank" rel="noopener noreferrer" className="underline">Link</a>
-              </p>
-            ) : null}
+              {message.hotelName ? <p><strong>Hotel:</strong> {message.hotelName}</p> : null}
+              {message.customerName ? <p><strong>Guest:</strong> {message.customerName}</p> : null}
+              {message.checkInDate ? <p><strong>Check-in:</strong> {message.checkInDate}</p> : null}
+              {message.checkOutDate ? <p><strong>Check-out:</strong> {message.checkOutDate}</p> : null}
+              {message.totalCost ? <p><strong>Total Cost:</strong> {message.totalCost}</p> : null}
+              {message.isCancelable !== undefined ? (
+                <p>
+                  <strong>Cancelable:</strong> {message.isCancelable ? "Yes" : "No"}
+                </p>
+              ) : null}
+              {message.cancelableUntil ? (
+                <p><strong>Cancel by:</strong> {message.cancelableUntil}</p>
+              ) : null}
+              {message.confirmationReference ? (
+                <p><strong>Confirmation:</strong> {message.confirmationReference}</p>
+              ) : null}
+              {message.pinNumber ? <p><strong>PIN:</strong> {message.pinNumber}</p> : null}
+              {message.hotelAddress ? <p><strong>Address:</strong> {message.hotelAddress}</p> : null}
+              {message.modifyBookingLink ? (
+                <p>
+                  <strong>Modify:</strong> <a href={message.modifyBookingLink} target="_blank" rel="noopener noreferrer" className="underline">Link</a>
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded text-xs">
+            <p className="font-semibold mb-1 text-slate-800 dark:text-slate-200">Analysis Results:</p>
+            <div className="space-y-1 text-slate-700 dark:text-slate-300">
+              <p>
+                <strong>Hotel Booking:</strong> No
+              </p>
+            </div>
+          </div>
+        )
       ) : null}
 
       {showPreview && message.bodyHtml ? (

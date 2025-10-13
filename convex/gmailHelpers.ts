@@ -8,6 +8,7 @@ export const getUserWithTokens = internalMutation({
       _id: v.id("users"),
       gmailAccessToken: v.optional(v.string()),
       gmailRefreshToken: v.optional(v.string()),
+      gmailTokenExpiry: v.optional(v.number()),
     }),
     v.null()
   ),
@@ -24,7 +25,24 @@ export const getUserWithTokens = internalMutation({
       _id: user._id,
       gmailAccessToken: user.gmailAccessToken,
       gmailRefreshToken: user.gmailRefreshToken,
+      gmailTokenExpiry: user.gmailTokenExpiry,
     };
+  },
+});
+
+export const updateAccessToken = internalMutation({
+  args: {
+    userId: v.id("users"),
+    accessToken: v.string(),
+    expiresIn: v.optional(v.number()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const patch: Record<string, unknown> = { gmailAccessToken: args.accessToken };
+    if (args.expiresIn !== undefined)
+      patch.gmailTokenExpiry = Date.now() + args.expiresIn * 1000;
+    await ctx.db.patch(args.userId, patch);
+    return null;
   },
 });
 
