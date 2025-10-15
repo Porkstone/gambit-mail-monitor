@@ -64,3 +64,26 @@ http://localhost:3000/api/auth/gmail/callback
 
 ```
 
+## Chrome Extension JWT handoff
+
+The web app exposes a token endpoint and posts the Clerk convex JWT to the page so an extension can consume it.
+
+- Endpoint: `GET /api/extension/token` → `{ token: string }` (requires user session)
+- Bridge: `ExtensionBridge` posts a message: `{ source: "gmm", type: "token", token }`
+- Example API for the extension: `GET /api/extension/ping` with `Authorization: Bearer <token>` and permissive CORS.
+
+Content script example:
+```js
+window.addEventListener("message", (event) => {
+  if (event.source !== window) return;
+  const msg = event.data;
+  if (!msg || msg.source !== "gmm" || msg.type !== "token") return;
+  const token = msg.token;
+  // Use the token for API calls
+  fetch("https://your-app-host/api/extension/ping", {
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: "omit",
+  }).then(r => r.json()).then(console.log);
+});
+```
+
