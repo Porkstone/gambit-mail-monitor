@@ -177,3 +177,38 @@ export const listBookingMessages = query({
 });
 
 
+export const countReservations = query({
+  args: {},
+  returns: v.object({ count: v.number() }),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity)
+      return { count: 0 };
+
+    const clerkUserId = identity.subject;
+    if (!clerkUserId)
+      return { count: 0 };
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", clerkUserId))
+      .unique();
+
+    if (!user)
+      return { count: 0 };
+
+    // Count booking emails identified as hotel bookings for this user
+    let count = 0;
+    const cursor = ctx.db
+      .query("bookingEmails")
+      .withIndex("by_user", (q) => q.eq("userId", user._id));
+
+    for await (const row of cursor)
+      if (row.isHotelBooking === true)
+        count++;
+
+    return { count };
+  },
+});
+
+
