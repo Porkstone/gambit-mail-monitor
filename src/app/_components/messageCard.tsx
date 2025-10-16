@@ -52,29 +52,27 @@ export default function MessageCard({ message }: MessageProps) {
         <p className="text-xs mt-2 text-slate-700 dark:text-slate-300">{message.subject}</p>
       ) : null}
 
-      {!message.isProcessed && !message.analysisError ? (
-        <button
-          className="mt-2 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
-          disabled={isAnalyzing}
-          onClick={async () => {
-            setIsAnalyzing(true);
-            try {
-              await analyzeEmail({ messageId: message._id });
-            } finally {
-              setIsAnalyzing(false);
-            }
-          }}
-        >
-          {isAnalyzing ? (
-            <span className="inline-flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
-              Analysing...
-            </span>
-          ) : (
-            "Analyse now"
-          )}
-        </button>
-      ) : null}
+      <button
+        className="mt-2 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+        disabled={isAnalyzing}
+        onClick={async () => {
+          setIsAnalyzing(true);
+          try {
+            await analyzeEmail({ messageId: message._id });
+          } finally {
+            setIsAnalyzing(false);
+          }
+        }}
+      >
+        {isAnalyzing ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full border-2 border-white/70 border-t-transparent animate-spin" />
+            Analysing...
+          </span>
+        ) : (
+          "Analyse now"
+        )}
+      </button>
 
       {message.bodyHtml ? (
         <button

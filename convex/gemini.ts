@@ -67,7 +67,7 @@ export const analyzeEmailWithGemini = action({
 
     const prompt = `Please analyze the following HTML email content and answer these questions. Return your response as a JSON object with the exact field names specified:
 
-1. Is this email a confirmation of a hotel booking reservation? (boolean field: "isHotelBooking" - only true if check-in date and check-out date are present)
+1. Is this email a confirmation of a hotel booking reservation? (boolean field: "isHotelBooking")
 2. Is this booking cancelable? (boolean field: "isCancelable") 
 3. Up till which date is booking cancelable? (string field: "cancelableUntil")
 4. What is the customer name who made the booking? (string field: "customerName")
@@ -89,7 +89,8 @@ ${contentToAnalyze}`;
       console.log("[Gemini] Calling Gemini API (client) for message:", args.messageId);
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+      //const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const textContent = response.text();

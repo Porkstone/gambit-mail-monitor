@@ -36,14 +36,24 @@ export const checkBookingEmails = action({
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
+    const FIVE_MIN = 5 * 60 * 1000;
+
     const refreshTokenIfNeeded = async (): Promise<string> => {
       if (!user.gmailAccessToken)
         throw new Error("Gmail not connected");
-      const willExpireSoon = user.gmailTokenExpiry && Date.now() > user.gmailTokenExpiry - 60_000;
+
+      const expiresAt = user.gmailTokenExpiry ?? 0;
+      const willExpireSoon = Date.now() > (expiresAt - FIVE_MIN);
+
       if (!willExpireSoon)
         return user.gmailAccessToken;
-      if (!user.gmailRefreshToken || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET)
-        return user.gmailAccessToken;
+
+      if (!user.gmailRefreshToken)
+        throw new Error("Gmail session expired (no refresh token). Please reconnect Gmail.");
+
+      if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET)
+        throw new Error("Server misconfigured: missing Google client credentials.");
+
       const res = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -54,58 +64,76 @@ export const checkBookingEmails = action({
           grant_type: "refresh_token",
         }),
       });
-      if (!res.ok)
-        return user.gmailAccessToken;
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Gmail refresh failed (${res.status}): ${errText || "Unknown error"}`);
+      }
+
       const data = await res.json();
       const accessToken = data.access_token as string | undefined;
-      const expiresIn = (data.expires_in as number | undefined) ?? 3600; // default 1 hour
-      if (accessToken) {
-        await ctx.runMutation(internal.gmailHelpers.updateAccessToken, {
-          userId: user._id,
-          accessToken,
-          expiresIn,
-        });
-        // Update local copy to avoid repeated refreshes and stale expiry
-        user.gmailAccessToken = accessToken;
-        user.gmailTokenExpiry = Date.now() + expiresIn * 1000;
-        return accessToken;
-      }
-      return user.gmailAccessToken;
+      const expiresIn = (data.expires_in as number | undefined) ?? 3600;
+
+      if (!accessToken)
+        throw new Error("Gmail refresh did not return an access token.");
+
+      await ctx.runMutation(internal.gmailHelpers.updateAccessToken, {
+        userId: user._id,
+        accessToken,
+        expiresIn,
+      });
+
+      user.gmailAccessToken = accessToken;
+      user.gmailTokenExpiry = Date.now() + expiresIn * 1000;
+
+      return accessToken;
     };
 
     const gmailFetch = async (url: string) => {
       let token = await refreshTokenIfNeeded();
       let resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (resp.status === 401 && user.gmailRefreshToken && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
-        // force refresh
-        const res = await fetch("https://oauth2.googleapis.com/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            client_id: GOOGLE_CLIENT_ID,
-            client_secret: GOOGLE_CLIENT_SECRET,
-            refresh_token: user.gmailRefreshToken,
-            grant_type: "refresh_token",
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const accessToken = data.access_token as string | undefined;
-          const expiresIn = (data.expires_in as number | undefined) ?? 3600;
-          if (accessToken) {
-            await ctx.runMutation(internal.gmailHelpers.updateAccessToken, {
-              userId: user._id,
-              accessToken,
-              expiresIn,
-            });
-            user.gmailAccessToken = accessToken;
-            user.gmailTokenExpiry = Date.now() + expiresIn * 1000;
-            token = accessToken;
-            resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-          }
-        }
-      }
-      return resp;
+
+      if (resp.status !== 401)
+        return resp;
+
+      // Try one forced refresh on 401
+      if (!user.gmailRefreshToken)
+        return resp;
+      if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET)
+        return resp;
+
+      const res = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          refresh_token: user.gmailRefreshToken,
+          grant_type: "refresh_token",
+        }),
+      });
+
+      if (!res.ok)
+        return resp;
+
+      const data = await res.json();
+      const accessToken = data.access_token as string | undefined;
+      const expiresIn = (data.expires_in as number | undefined) ?? 3600;
+
+      if (!accessToken)
+        return resp;
+
+      await ctx.runMutation(internal.gmailHelpers.updateAccessToken, {
+        userId: user._id,
+        accessToken,
+        expiresIn,
+      });
+
+      user.gmailAccessToken = accessToken;
+      user.gmailTokenExpiry = Date.now() + expiresIn * 1000;
+
+      token = accessToken;
+      return await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     };
 
     try {
