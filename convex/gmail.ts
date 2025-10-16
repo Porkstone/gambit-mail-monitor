@@ -3,6 +3,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 export const checkBookingEmails = action({
   args: {},
@@ -20,7 +21,7 @@ export const checkBookingEmails = action({
     if (!clerkUserId)
       throw new Error("Missing Clerk subject");
 
-    const user: { _id: any; gmailAccessToken?: string; gmailRefreshToken?: string; gmailTokenExpiry?: number; } | null = await ctx.runMutation(internal.gmailHelpers.getUserWithTokens, { clerkUserId });
+    const user: { _id: Id<"users">; gmailAccessToken?: string; gmailRefreshToken?: string; gmailTokenExpiry?: number; } | null = await ctx.runMutation(internal.gmailHelpers.getUserWithTokens, { clerkUserId });
     if (!user)
       throw new Error("User not found");
 
@@ -91,7 +92,7 @@ export const checkBookingEmails = action({
 
     const gmailFetch = async (url: string) => {
       let token = await refreshTokenIfNeeded();
-      let resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const resp: Response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 
       if (resp.status !== 401)
         return resp;
@@ -164,7 +165,7 @@ export const checkBookingEmails = action({
         const headers = messageData.payload?.headers || [];
         
         const getHeader = (name: string) => {
-          const header = headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase());
+          const header = headers.find((h: { name: string; value?: string }) => h.name.toLowerCase() === name.toLowerCase());
           return header?.value;
         };
 
@@ -184,16 +185,17 @@ export const checkBookingEmails = action({
           return Buffer.from(padded, "base64").toString("utf-8");
         };
 
-        const extractBodies = (p: any) => {
+        type GmailPart = { body?: { data?: string }; mimeType?: string; parts?: GmailPart[] };
+        const extractBodies = (p: GmailPart | undefined) => {
           if (!p)
             return;
           // If has data directly
           if (p.body?.data && p.mimeType) {
             const decoded = decodeGmailBase64(p.body.data);
             if (p.mimeType === "text/html" || p.mimeType.includes("html"))
-              bodyHtml ||= decoded;
+              bodyHtml += decoded;
             if (p.mimeType === "text/plain")
-              body ||= decoded;
+              body += decoded;
           }
           // Recurse into parts (multipart/alternative etc.)
           if (Array.isArray(p.parts)) {
@@ -204,12 +206,15 @@ export const checkBookingEmails = action({
 
         extractBodies(payload);
 
+        // Cap to a generous size to respect Convex document limits (~1MB per doc)
+        const MAX_CHARS = 250_000;
+
         const stored = await ctx.runMutation(internal.gmailHelpers.storeMessage, {
           userId: user._id,
           gmailMessageId: messageData.id,
           subject: (subject ?? "").toString(),
-          body: (body ?? "").substring(0, 10000),
-          bodyHtml: (bodyHtml ?? "").substring(0, 10000),
+          body: (body ?? "").slice(0, MAX_CHARS),
+          bodyHtml: (bodyHtml ?? "").slice(0, MAX_CHARS),
           receivedAt: date ?? Date.now(),
           sender: (from ?? "").toString(),
         });

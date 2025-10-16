@@ -57,10 +57,10 @@ http://localhost:3000/api/auth/gmail/callback
 [x] Create record in users table after sign-in
 [x] Allow user to connect to mailbox
 [x] Monitor mailbox for booking.com emails
-[] Analyse emails to see if they are reservations and extract data
+[x] Analyse emails to see if they are reservations and extract data
+[ ] Create watcher via gambit-price-monitor api to monitor for better price
     - In progress 
-[] Create watcher via gambit-price-monitor api to monitor for better price
-
+[ ] Fix issue where mail cannot be checked after token expires - probably need to add logic to refresn
 
 ```
 
