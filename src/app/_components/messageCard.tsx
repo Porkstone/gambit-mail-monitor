@@ -28,13 +28,17 @@ type MessageProps = {
     confirmationReference?: string;
     modifyBookingLink?: string;
     analysisError?: string;
+    watcherId?: string;
   };
 };
 
 export default function MessageCard({ message }: MessageProps) {
   const analyzeEmail = useAction(api.gemini.analyzeEmailWithGemini);
+  const createWatcher = useAction(api.watchers.createWatcher);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [creatingWatcher, setCreatingWatcher] = useState(false);
+  const [watcherResult, setWatcherResult] = useState<string | null>(null);
 
   return (
     <div className="bg-white dark:bg-slate-900 p-3 rounded border border-slate-300 dark:border-slate-700">
@@ -120,7 +124,38 @@ export default function MessageCard({ message }: MessageProps) {
                   <strong>Modify:</strong> <a href={message.modifyBookingLink} target="_blank" rel="noopener noreferrer" className="underline">Link</a>
                 </p>
               ) : null}
+              {message.watcherId ? (
+                <p><strong>Watcher:</strong> {message.watcherId}</p>
+              ) : null}
             </div>
+            {message.isHotelBooking && message.isCancelable === true && !message.watcherId && message.hotelName && message.checkInDate && message.checkOutDate && message.totalCost && message.cancelableUntil && message.pinNumber && message.modifyBookingLink ? (
+              <div className="mt-2">
+                <button
+                  className="bg-emerald-600 text-white px-3 py-1 rounded text-xs hover:bg-emerald-700 disabled:opacity-50"
+                  disabled={creatingWatcher}
+                  onClick={async () => {
+                    setCreatingWatcher(true);
+                    setWatcherResult(null);
+                    try {
+                      const res = await createWatcher({ messageId: message._id });
+                      if (res.success)
+                        setWatcherResult(res.watcherId ? `Watcher created: ${res.watcherId}` : "Watcher created");
+                      else
+                        setWatcherResult(res.error || "Failed to create watcher");
+                    } catch (err) {
+                      setWatcherResult(String(err));
+                    } finally {
+                      setCreatingWatcher(false);
+                    }
+                  }}
+                >
+                  {creatingWatcher ? "Creating watcher..." : "Create Watcher"}
+                </button>
+                {watcherResult ? (
+                  <p className="mt-1 text-xs">{watcherResult}</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded text-xs">

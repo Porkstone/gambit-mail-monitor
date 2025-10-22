@@ -124,6 +124,7 @@ export const listBookingMessages = query({
       pinNumber: v.optional(v.string()),
       confirmationReference: v.optional(v.string()),
       modifyBookingLink: v.optional(v.string()),
+      watcherId: v.optional(v.string()),
       analysisError: v.optional(v.string()),
     })
   ),
@@ -171,6 +172,7 @@ export const listBookingMessages = query({
       pinNumber: m.pinNumber,
       confirmationReference: m.confirmationReference,
       modifyBookingLink: m.modifyBookingLink,
+      watcherId: m.watcherId,
       analysisError: m.analysisError,
     }));
   },

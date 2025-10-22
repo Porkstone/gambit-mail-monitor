@@ -6,6 +6,7 @@ export const getUserWithTokens = internalMutation({
   returns: v.union(
     v.object({
       _id: v.id("users"),
+      email: v.optional(v.string()),
       gmailAccessToken: v.optional(v.string()),
       gmailRefreshToken: v.optional(v.string()),
       gmailTokenExpiry: v.optional(v.number()),
@@ -23,6 +24,7 @@ export const getUserWithTokens = internalMutation({
 
     return {
       _id: user._id,
+      email: user.email,
       gmailAccessToken: user.gmailAccessToken,
       gmailRefreshToken: user.gmailRefreshToken,
       gmailTokenExpiry: user.gmailTokenExpiry,
@@ -160,6 +162,55 @@ export const storeAnalysisError = internalMutation({
       analysisError: args.error,
     });
     console.log("[Gmail] Stored analysis error for message:", args.messageId, args.error);
+    return null;
+  },
+});
+
+export const getMessageForWatcher = internalMutation({
+  args: { messageId: v.id("bookingEmails") },
+  returns: v.union(
+    v.object({
+      _id: v.id("bookingEmails"),
+      userId: v.id("users"),
+      isHotelBooking: v.optional(v.boolean()),
+      hotelName: v.optional(v.string()),
+      checkInDate: v.optional(v.string()),
+      checkOutDate: v.optional(v.string()),
+      totalCost: v.optional(v.string()),
+      isCancelable: v.optional(v.boolean()),
+      cancelableUntil: v.optional(v.string()),
+      modifyBookingLink: v.optional(v.string()),
+      pinNumber: v.optional(v.string()),
+      watcherId: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const m = await ctx.db.get(args.messageId);
+    if (!m)
+      return null;
+    return {
+      _id: m._id,
+      userId: m.userId,
+      isHotelBooking: m.isHotelBooking,
+      hotelName: m.hotelName,
+      checkInDate: m.checkInDate,
+      checkOutDate: m.checkOutDate,
+      totalCost: m.totalCost,
+      isCancelable: m.isCancelable,
+      cancelableUntil: m.cancelableUntil,
+      modifyBookingLink: m.modifyBookingLink,
+      pinNumber: m.pinNumber,
+      watcherId: m.watcherId,
+    };
+  },
+});
+
+export const setWatcherId = internalMutation({
+  args: { messageId: v.id("bookingEmails"), watcherId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, { watcherId: args.watcherId });
     return null;
   },
 });

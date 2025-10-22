@@ -18,6 +18,7 @@ import type * as gmail from "../gmail.js";
 import type * as gmailHelpers from "../gmailHelpers.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as users from "../users.js";
+import type * as watchers from "../watchers.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   gmailHelpers: typeof gmailHelpers;
   myFunctions: typeof myFunctions;
   users: typeof users;
+  watchers: typeof watchers;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
