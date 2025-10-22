@@ -1,8 +1,8 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface GeminiAnalysisResult {
@@ -142,6 +142,20 @@ ${contentToAnalyze}`;
         error: errorMessage,
       });
       return { success: false, error: errorMessage };
+    }
+  },
+});
+
+export const analyzeEmailInternal = internalAction({
+  args: { messageId: v.id("bookingEmails") },
+  returns: v.object({ success: v.boolean(), error: v.optional(v.string()) }),
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+    // Delegate to public action (same code path) since internal action cannot set auth; this calls the existing analysis
+    try {
+      const res: { success: boolean; error?: string } = await ctx.runAction(api.gemini.analyzeEmailWithGemini, { messageId: args.messageId });
+      return res;
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
     }
   },
 });

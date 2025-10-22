@@ -18,6 +18,21 @@ const crons = cronJobs();
 // Every day at 2:00 AM UTC
 crons.cron("daily gmail check", "0 2 * * *", internal.crons.runDailyGmailCheck, {});
 
+export const runDailyAnalysis = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    // Fetch a batch of unprocessed messages, analyze them
+    const ids = await ctx.runQuery(internal.gmailHelpers.listUnprocessedOrErrored, { limit: 50 });
+    for (const id of ids)
+      await ctx.runAction(internal.gemini.analyzeEmailInternal, { messageId: id }).catch(() => {});
+    return null;
+  },
+});
+
+// Every day at 4:00 AM UTC
+crons.cron("daily analysis", "0 4 * * *", internal.crons.runDailyAnalysis, {});
+
 export default crons;
 
 

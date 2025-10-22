@@ -235,3 +235,19 @@ export const listUsersWithGmail = internalQuery({
   },
 });
 
+export const listUnprocessedOrErrored = internalQuery({
+  args: { limit: v.number() },
+  returns: v.array(v.id("bookingEmails")),
+  handler: async (ctx, args) => {
+    const ids: Array<any> = [];
+    for await (const m of ctx.db.query("bookingEmails")) {
+      if ((m.isProcessed !== true) || (m.analysisError && m.analysisError.length > 0)) {
+        ids.push(m._id);
+        if (ids.length >= args.limit)
+          break;
+      }
+    }
+    return ids;
+  },
+});
+
