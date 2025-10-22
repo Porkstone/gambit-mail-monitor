@@ -1,6 +1,6 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -143,6 +143,78 @@ export const createWatcher = action({
 
     const body: Record<string, unknown> = {
       email: identity.email ?? undefined,
+      hotelName: details.hotelName,
+      checkInDate: details.checkInDate,
+      checkOutDate: details.checkOutDate,
+      userPriceAmount: amount,
+      userPriceCurrencyCode: currency,
+      cancellationExpiryDate: normalizedCancelBy,
+      modifyBookingLink: details.modifyBookingLink,
+      pinNumber: details.pinNumber,
+    };
+
+    const res = await fetch("https://successful-elephant-302.convex.site/api/watchers", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    let data: { success?: boolean; watcherId?: string } = {};
+    if (res.ok)
+      data = await res.json().catch(() => ({}));
+    if (!res.ok || data.success !== true) {
+      const errText = await res.text().catch(() => "");
+      return { success: false as const, error: `Watcher create failed (${res.status}) ${errText}` };
+    }
+
+    const watcherId = data.watcherId;
+    if (watcherId)
+      await ctx.runMutation(internal.gmailHelpers.setWatcherId, { messageId: args.messageId, watcherId });
+
+    return { success: true as const, watcherId };
+  },
+});
+
+
+export const createWatcherInternal = internalAction({
+  args: {
+    messageId: v.id("bookingEmails"),
+  },
+  returns: v.object({ success: v.boolean(), watcherId: v.optional(v.string()), error: v.optional(v.string()) }),
+  handler: async (ctx, args): Promise<{ success: boolean; watcherId?: string; error?: string }> => {
+    const details: ({
+      _id: Id<"bookingEmails">;
+      userId: Id<"users">;
+      userEmail?: string;
+      isHotelBooking?: boolean;
+      hotelName?: string;
+      checkInDate?: string;
+      checkOutDate?: string;
+      totalCost?: string;
+      isCancelable?: boolean;
+      cancelableUntil?: string;
+      modifyBookingLink?: string;
+      pinNumber?: string;
+      watcherId?: string;
+    }) | null = await ctx.runMutation(internal.gmailHelpers.getMessageForWatcher, { messageId: args.messageId });
+    if (!details)
+      return { success: false as const, error: "Message not found" };
+    if (details.watcherId)
+      return { success: true as const, watcherId: details.watcherId };
+    if (details.isHotelBooking !== true)
+      return { success: false as const, error: "Not a hotel booking" };
+
+    const { amount, currency } = parsePrice(details.totalCost);
+
+    if (!details.hotelName || !details.checkInDate || !details.checkOutDate || amount === undefined || !currency)
+      return { success: false as const, error: "Missing required booking fields" };
+
+    const normalizedCancelBy = normalizeToYMD(details.cancelableUntil);
+    if (!normalizedCancelBy)
+      return { success: false as const, error: "Missing cancel-by date" };
+
+    const body: Record<string, unknown> = {
+      email: details.userEmail ?? undefined,
       hotelName: details.hotelName,
       checkInDate: details.checkInDate,
       checkOutDate: details.checkOutDate,

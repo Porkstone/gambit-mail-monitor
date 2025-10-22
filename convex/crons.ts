@@ -1,5 +1,5 @@
 import { cronJobs } from "convex/server";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -32,6 +32,20 @@ export const runDailyAnalysis = internalAction({
 
 // Every day at 4:00 AM UTC
 crons.cron("daily analysis", "0 4 * * *", internal.crons.runDailyAnalysis, {});
+
+export const runDailyWatcherCreation = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const ids = await ctx.runQuery(internal.gmailHelpers.listEligibleForWatcher, { limit: 50 });
+    for (const id of ids)
+      await ctx.runAction(internal.watchers.createWatcherInternal, { messageId: id }).catch(() => {});
+    return null;
+  },
+});
+
+// Every day at 5:00 AM UTC
+crons.cron("daily watcher creation", "0 5 * * *", internal.crons.runDailyWatcherCreation, {});
 
 export default crons;
 

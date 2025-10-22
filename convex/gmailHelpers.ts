@@ -1,5 +1,6 @@
 import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 export const getUserWithTokens = internalMutation({
   args: { clerkUserId: v.string() },
@@ -172,6 +173,7 @@ export const getMessageForWatcher = internalMutation({
     v.object({
       _id: v.id("bookingEmails"),
       userId: v.id("users"),
+      userEmail: v.optional(v.string()),
       isHotelBooking: v.optional(v.boolean()),
       hotelName: v.optional(v.string()),
       checkInDate: v.optional(v.string()),
@@ -189,9 +191,11 @@ export const getMessageForWatcher = internalMutation({
     const m = await ctx.db.get(args.messageId);
     if (!m)
       return null;
+    const user = await ctx.db.get(m.userId);
     return {
       _id: m._id,
       userId: m.userId,
+      userEmail: user?.email,
       isHotelBooking: m.isHotelBooking,
       hotelName: m.hotelName,
       checkInDate: m.checkInDate,
@@ -239,9 +243,25 @@ export const listUnprocessedOrErrored = internalQuery({
   args: { limit: v.number() },
   returns: v.array(v.id("bookingEmails")),
   handler: async (ctx, args) => {
-    const ids: Array<any> = [];
+    const ids: Array<Id<"bookingEmails">> = [];
     for await (const m of ctx.db.query("bookingEmails")) {
       if ((m.isProcessed !== true) || (m.analysisError && m.analysisError.length > 0)) {
+        ids.push(m._id);
+        if (ids.length >= args.limit)
+          break;
+      }
+    }
+    return ids;
+  },
+});
+
+export const listEligibleForWatcher = internalQuery({
+  args: { limit: v.number() },
+  returns: v.array(v.id("bookingEmails")),
+  handler: async (ctx, args) => {
+    const ids: Array<Id<"bookingEmails">> = [];
+    for await (const m of ctx.db.query("bookingEmails")) {
+      if (!m.watcherId && m.isHotelBooking === true && m.isCancelable === true && m.hotelName && m.checkInDate && m.checkOutDate && m.totalCost && m.pinNumber && m.modifyBookingLink && m.cancelableUntil) {
         ids.push(m._id);
         if (ids.length >= args.limit)
           break;
