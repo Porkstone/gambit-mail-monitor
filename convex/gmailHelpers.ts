@@ -1,4 +1,4 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getUserWithTokens = internalMutation({
@@ -212,6 +212,26 @@ export const setWatcherId = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.messageId, { watcherId: args.watcherId });
     return null;
+  },
+});
+
+export const listUsersWithGmail = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("users"),
+      clerkUserId: v.string(),
+      gmailAccessToken: v.optional(v.string()),
+      gmailRefreshToken: v.optional(v.string()),
+      gmailTokenExpiry: v.optional(v.number()),
+    })
+  ),
+  handler: async (ctx) => {
+    const out: Array<{ _id: any; clerkUserId: string; gmailAccessToken?: string; gmailRefreshToken?: string; gmailTokenExpiry?: number; }> = [];
+    for await (const u of ctx.db.query("users"))
+      if (u.gmailAccessToken)
+        out.push({ _id: u._id, clerkUserId: u.clerkUserId, gmailAccessToken: u.gmailAccessToken, gmailRefreshToken: u.gmailRefreshToken, gmailTokenExpiry: u.gmailTokenExpiry });
+    return out;
   },
 });
 
