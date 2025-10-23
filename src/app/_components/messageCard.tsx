@@ -29,6 +29,7 @@ type MessageProps = {
     modifyBookingLink?: string;
     analysisError?: string;
     watcherId?: string;
+    cancellationStatus?: string;
   };
 };
 
@@ -127,7 +128,31 @@ export default function MessageCard({ message }: MessageProps) {
               {message.watcherId ? (
                 <p><strong>Watcher:</strong> {message.watcherId}</p>
               ) : null}
+              {message.cancellationStatus ? (
+                <p><strong>Cancellation Status:</strong> {message.cancellationStatus}</p>
+              ) : null}
             </div>
+            {(message.cancellationStatus === "Awaiting Cancellation" || message.cancellationStatus === "Awaiting Cancelation") ? (
+              <div className="mt-2">
+                {message.modifyBookingLink ? (
+                  <a
+                    href={message.modifyBookingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 inline-block"
+                  >
+                    Start Cancellation
+                  </a>
+                ) : (
+                  <button
+                    className="bg-red-600 text-white px-3 py-1 rounded text-xs opacity-60"
+                    disabled
+                  >
+                    Start Cancellation
+                  </button>
+                )}
+              </div>
+            ) : null}
             {message.isHotelBooking && message.isCancelable === true && !message.watcherId && message.hotelName && message.checkInDate && message.checkOutDate && message.totalCost && message.cancelableUntil && message.pinNumber && message.modifyBookingLink ? (
               <div className="mt-2">
                 <button

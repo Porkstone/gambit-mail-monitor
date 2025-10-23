@@ -45,11 +45,13 @@ export default defineSchema({
     modifyBookingLink: v.optional(v.string()),
     analysisError: v.optional(v.string()),
     watcherId: v.optional(v.string()),
+    cancellationStatus: v.optional(v.string()),
   })
    .index("by_user", ["userId"]) 
    .index("by_user_and_receivedAt", ["userId", "receivedAt"]) 
    .index("by_gmail_id", ["gmailMessageId"]) 
-   .index("by_processed", ["isProcessed"]),
+   .index("by_processed", ["isProcessed"]) 
+   .index("by_watcher_id", ["watcherId"]),
 
     // Store price check results (without email notification fields)
   priceChecks: defineTable({

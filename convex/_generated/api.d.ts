@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as cancellations from "../cancellations.js";
 import type * as crons from "../crons.js";
 import type * as gemini from "../gemini.js";
 import type * as gmail from "../gmail.js";
@@ -30,6 +31,7 @@ import type * as watchers from "../watchers.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  cancellations: typeof cancellations;
   crons: typeof crons;
   gemini: typeof gemini;
   gmail: typeof gmail;

@@ -126,6 +126,7 @@ export const listBookingMessages = query({
       modifyBookingLink: v.optional(v.string()),
       watcherId: v.optional(v.string()),
       analysisError: v.optional(v.string()),
+      cancellationStatus: v.optional(v.string()),
     })
   ),
   handler: async (ctx) => {
@@ -174,6 +175,7 @@ export const listBookingMessages = query({
       modifyBookingLink: m.modifyBookingLink,
       watcherId: m.watcherId,
       analysisError: m.analysisError,
+      cancellationStatus: m.cancellationStatus,
     }));
   },
 });
