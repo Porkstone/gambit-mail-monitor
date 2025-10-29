@@ -3,6 +3,21 @@ import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 
+const crons = cronJobs();
+
+// Every day at 2:00 AM UTC
+crons.cron("daily gmail check", "0 2 * * *", internal.crons.runDailyGmailCheck, {});
+// Every day at 2:00 AM UTC
+crons.cron("daily analysis", "28 11 * * *", internal.crons.runDailyAnalysis, {});
+// Every day at 5:00 AM UTC
+crons.cron("daily watcher creation", "0 5 * * *", internal.crons.runDailyWatcherCreation, {});
+
+export default crons;
+
+
+
+
+
 // Bridge internal action to call the public action (crons must call internal functions)
 export const runDailyGmailCheck = internalAction({
   args: {},
@@ -13,10 +28,7 @@ export const runDailyGmailCheck = internalAction({
   },
 });
 
-const crons = cronJobs();
 
-// Every day at 2:00 AM UTC
-crons.cron("daily gmail check", "0 2 * * *", internal.crons.runDailyGmailCheck, {});
 
 export const runDailyAnalysis = internalAction({
   args: {},
@@ -30,8 +42,16 @@ export const runDailyAnalysis = internalAction({
   },
 });
 
-// Every day at 4:00 AM UTC
-crons.cron("daily analysis", "0 4 * * *", internal.crons.runDailyAnalysis, {});
+
+export const runDailyAnalysisTest = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    await ctx.runAction(internal.gmail.checkBookingEmailsForAllUsers, {});
+    return null;
+  },
+});
+
 
 export const runDailyWatcherCreation = internalAction({
   args: {},
@@ -44,9 +64,5 @@ export const runDailyWatcherCreation = internalAction({
   },
 });
 
-// Every day at 5:00 AM UTC
-crons.cron("daily watcher creation", "0 5 * * *", internal.crons.runDailyWatcherCreation, {});
-
-export default crons;
 
 

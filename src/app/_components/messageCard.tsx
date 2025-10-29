@@ -1,6 +1,6 @@
 "use client";
 
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useState } from "react";
@@ -16,6 +16,7 @@ type MessageProps = {
     isProcessed?: boolean;
     processedAt?: number;
     isHotelBooking?: boolean;
+    isCancellationConfirmation?: boolean;
     isCancelable?: boolean;
     cancelableUntil?: string;
     customerName?: string;
@@ -36,14 +37,23 @@ type MessageProps = {
 export default function MessageCard({ message }: MessageProps) {
   const analyzeEmail = useAction(api.gemini.analyzeEmailWithGemini);
   const createWatcher = useAction(api.watchers.createWatcher);
+  const getWatcherIdByConfirmationRef = useAction(api.watchers.getWatcherIdByConfirmationRef);
+  const deleteMessage = useMutation(api.bookingEmails.deleteBookingEmail);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [creatingWatcher, setCreatingWatcher] = useState(false);
   const [watcherResult, setWatcherResult] = useState<string | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   return (
     <div className="bg-white dark:bg-slate-900 p-3 rounded border border-slate-300 dark:border-slate-700">
       <p className="font-semibold text-sm">{message.subject || "(No subject)"}</p>
+      {message.isCancellationConfirmation === true ? (
+        <span className="inline-block mt-1 mr-2 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 align-middle">
+          Cancellation
+        </span>
+      ) : null}
       <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
         From: {message.sender || "Unknown"}
       </p>
@@ -88,6 +98,21 @@ export default function MessageCard({ message }: MessageProps) {
         </button>
       ) : null}
 
+      <button
+        className="mt-2 ml-2 bg-rose-600 text-white px-3 py-1 rounded text-xs hover:bg-rose-700 disabled:opacity-50"
+        disabled={isDeleting}
+        onClick={async () => {
+          setIsDeleting(true);
+          try {
+            await deleteMessage({ messageId: message._id });
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+      >
+        {isDeleting ? "Deleting..." : "Delete"}
+      </button>
+
       {message.analysisError ? (
         <div className="mt-2 p-2 bg-red-100 dark:bg-red-900 rounded text-xs text-red-800 dark:text-red-200">
           Error: {message.analysisError}
@@ -102,6 +127,11 @@ export default function MessageCard({ message }: MessageProps) {
               <p>
                 <strong>Hotel Booking:</strong> Yes
               </p>
+              {message.isCancellationConfirmation !== undefined ? (
+                <p>
+                  <strong>Cancellation Email:</strong> {message.isCancellationConfirmation ? "Yes" : "No"}
+                </p>
+              ) : null}
               {message.hotelName ? <p><strong>Hotel:</strong> {message.hotelName}</p> : null}
               {message.customerName ? <p><strong>Guest:</strong> {message.customerName}</p> : null}
               {message.checkInDate ? <p><strong>Check-in:</strong> {message.checkInDate}</p> : null}
@@ -192,6 +222,50 @@ export default function MessageCard({ message }: MessageProps) {
             </div>
           </div>
         )
+      ) : null}
+
+      {message.isCancellationConfirmation === true ? (
+        <div className="mt-2">
+          <button
+            className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 disabled:opacity-50"
+            disabled={deactivating}
+            onClick={async () => {
+              setDeactivating(true);
+              setWatcherResult(null);
+              try {
+                let watcherId = message.watcherId;
+                if (!watcherId && message.confirmationReference) {
+                  const res = await getWatcherIdByConfirmationRef({ confirmationReference: message.confirmationReference });
+                  watcherId = res?.watcherId;
+                }
+                if (!watcherId) {
+                  setWatcherResult("No watcher found for this confirmation");
+                } else {
+                  const resp = await fetch("https://successful-elephant-302.convex.site/api/watchers/deactivate", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ watcherId }),
+                  });
+                  if (resp.ok) {
+                    setWatcherResult(`Watcher deactivated: ${watcherId}`);
+                  } else {
+                    const txt = await resp.text().catch(() => "");
+                    setWatcherResult(`Failed to deactivate (${resp.status}) ${txt}`);
+                  }
+                }
+              } catch (err) {
+                setWatcherResult(String(err));
+              } finally {
+                setDeactivating(false);
+              }
+            }}
+          >
+            {deactivating ? "Deactivating..." : "Deactivate Watcher"}
+          </button>
+          {watcherResult ? (
+            <p className="mt-1 text-xs">{watcherResult}</p>
+          ) : null}
+        </div>
       ) : null}
 
       {showPreview && message.bodyHtml ? (

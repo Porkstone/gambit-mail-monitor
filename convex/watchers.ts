@@ -248,3 +248,18 @@ export const createWatcherInternal = internalAction({
 });
 
 
+export const getWatcherIdByConfirmationRef = action({
+  args: { confirmationReference: v.string() },
+  returns: v.union(v.object({ watcherId: v.string() }), v.null()),
+  handler: async (ctx, args): Promise<{ watcherId: string } | null> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity)
+      return null;
+    const res: { watcherId: string } | null = await ctx.runQuery(
+      internal.watchersQueries.getWatcherIdByConfirmationRefQ,
+      { confirmationReference: args.confirmationReference }
+    );
+    return res;
+  },
+});
+

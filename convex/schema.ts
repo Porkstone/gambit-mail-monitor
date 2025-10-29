@@ -32,6 +32,7 @@ export default defineSchema({
     isProcessed: v.optional(v.boolean()),
     processedAt: v.optional(v.number()),
     isHotelBooking: v.optional(v.boolean()),
+    isCancellationConfirmation: v.optional(v.boolean()),
     isCancelable: v.optional(v.boolean()),
     cancelableUntil: v.optional(v.string()),
     customerName: v.optional(v.string()),
@@ -51,7 +52,8 @@ export default defineSchema({
    .index("by_user_and_receivedAt", ["userId", "receivedAt"]) 
    .index("by_gmail_id", ["gmailMessageId"]) 
    .index("by_processed", ["isProcessed"]) 
-   .index("by_watcher_id", ["watcherId"]),
+   .index("by_watcher_id", ["watcherId"]) 
+   .index("by_confirmation_reference", ["confirmationReference"]),
 
     // Store price check results (without email notification fields)
   priceChecks: defineTable({

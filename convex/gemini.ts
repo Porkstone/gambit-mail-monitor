@@ -7,6 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface GeminiAnalysisResult {
   isHotelBooking?: boolean;
+  isCancellationConfirmation?: boolean;
   isCancelable?: boolean;
   cancelableUntil?: string;
   customerName?: string;
@@ -20,22 +21,11 @@ interface GeminiAnalysisResult {
   modifyBookingLink?: string;
 }
 
-export const analyzeEmailWithGemini = action({
-  args: {
-    messageId: v.id("bookingEmails"),
-  },
-  returns: v.object({
-    success: v.boolean(),
-    error: v.optional(v.string()),
-  }),
+export const analyzeEmailCore = internalAction({
+  args: { messageId: v.id("bookingEmails") },
+  returns: v.object({ success: v.boolean(), error: v.optional(v.string()) }),
   handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity)
-      throw new Error("Not authenticated");
-
-    const message = await ctx.runMutation(internal.gmailHelpers.getMessage, {
-      messageId: args.messageId,
-    });
+    const message = await ctx.runMutation(internal.gmailHelpers.getMessage, { messageId: args.messageId });
 
     if (!message) {
       await ctx.runMutation(internal.gmailHelpers.storeAnalysisError, {
@@ -65,8 +55,9 @@ export const analyzeEmailWithGemini = action({
       return { success: false, error: "GOOGLE_GENERATIVE_AI_API_KEY not configured" };
     }
 
-    const prompt = `Please analyze the following HTML email content and answer these questions. Return your response as a JSON object with the exact field names specified:
-
+    const prompt = `Please analyze the following HTML email content and answer these questions. 
+    If the email contains "You have a new message from", "Payment successful", "Special Request for your Reservation", "Update on your check-in time request", "This is your receipt", "A reminder about your trip" or "We’ll be charging your card soon" then it is not a booking confirmation email.
+    Return your response as a JSON object with the exact field names specified:
 1. Is this email a confirmation of a hotel booking reservation? (boolean field: "isHotelBooking")
 2. Is this booking cancelable? (boolean field: "isCancelable") 
 3. Up till which date is booking cancelable? (string field: "cancelableUntil")
@@ -79,6 +70,7 @@ export const analyzeEmailWithGemini = action({
 10. What is the pin number? (string field: "pinNumber")
 11. What is the confirmation reference? (string field: "confirmationReference")
 12. What is the link to modify or cancel the booking? (string field: "modifyBookingLink")
+13. Is this email a cancellation confirmation? (boolean field: "isCancellationConfirmation")
 
 Return ONLY a valid JSON object with these exact field names. If information is not available, use null for that field. For dates, use ISO format (YYYY-MM-DD) when possible.
 
@@ -114,6 +106,7 @@ ${contentToAnalyze}`;
       const raw: GeminiAnalysisResult = JSON.parse(jsonMatch[0]);
       const analysisResult: GeminiAnalysisResult = {
         isHotelBooking: raw.isHotelBooking ?? undefined,
+        isCancellationConfirmation: raw.isCancellationConfirmation ?? undefined,
         isCancelable: raw.isCancelable ?? undefined,
         cancelableUntil: raw.cancelableUntil ?? undefined,
         customerName: raw.customerName ?? undefined,
@@ -146,13 +139,24 @@ ${contentToAnalyze}`;
   },
 });
 
+export const analyzeEmailWithGemini = action({
+  args: { messageId: v.id("bookingEmails") },
+  returns: v.object({ success: v.boolean(), error: v.optional(v.string()) }),
+  handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity)
+      throw new Error("Not authenticated");
+    const res: { success: boolean; error?: string } = await ctx.runAction(internal.gemini.analyzeEmailCore, { messageId: args.messageId });
+    return res;
+  },
+});
+
 export const analyzeEmailInternal = internalAction({
   args: { messageId: v.id("bookingEmails") },
   returns: v.object({ success: v.boolean(), error: v.optional(v.string()) }),
   handler: async (ctx, args): Promise<{ success: boolean; error?: string }> => {
-    // Delegate to public action (same code path) since internal action cannot set auth; this calls the existing analysis
     try {
-      const res: { success: boolean; error?: string } = await ctx.runAction(api.gemini.analyzeEmailWithGemini, { messageId: args.messageId });
+      const res: { success: boolean; error?: string } = await ctx.runAction(internal.gemini.analyzeEmailCore, { messageId: args.messageId });
       return res;
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : String(e) };

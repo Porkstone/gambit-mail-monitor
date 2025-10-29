@@ -160,7 +160,7 @@ function Content() {
           </div>
           <div className="flex flex-col gap-3">
             {bookingMessages
-              .filter((msg) => !msg.isProcessed || msg.isHotelBooking !== false)
+              .filter((msg) => !msg.isProcessed || msg.isHotelBooking !== false || msg.isCancellationConfirmation === true)
               .map((msg) => (
                 <MessageCard key={msg._id} message={msg} />
               ))}

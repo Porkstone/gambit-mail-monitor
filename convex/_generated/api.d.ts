@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as bookingEmails from "../bookingEmails.js";
 import type * as cancellations from "../cancellations.js";
 import type * as crons from "../crons.js";
 import type * as gemini from "../gemini.js";
@@ -21,6 +22,7 @@ import type * as gmailHelpers from "../gmailHelpers.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as users from "../users.js";
 import type * as watchers from "../watchers.js";
+import type * as watchersQueries from "../watchersQueries.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -31,6 +33,7 @@ import type * as watchers from "../watchers.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  bookingEmails: typeof bookingEmails;
   cancellations: typeof cancellations;
   crons: typeof crons;
   gemini: typeof gemini;
@@ -39,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   myFunctions: typeof myFunctions;
   users: typeof users;
   watchers: typeof watchers;
+  watchersQueries: typeof watchersQueries;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

@@ -113,6 +113,7 @@ export const storeAnalysisResult = internalMutation({
     messageId: v.id("bookingEmails"),
     analysisResult: v.object({
       isHotelBooking: v.optional(v.boolean()),
+      isCancellationConfirmation: v.optional(v.boolean()),
       isCancelable: v.optional(v.boolean()),
       cancelableUntil: v.optional(v.string()),
       customerName: v.optional(v.string()),
@@ -132,6 +133,7 @@ export const storeAnalysisResult = internalMutation({
       isProcessed: true,
       processedAt: Date.now(),
       isHotelBooking: args.analysisResult.isHotelBooking,
+      isCancellationConfirmation: args.analysisResult.isCancellationConfirmation,
       isCancelable: args.analysisResult.isCancelable,
       cancelableUntil: args.analysisResult.cancelableUntil,
       customerName: args.analysisResult.customerName,
