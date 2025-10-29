@@ -8,7 +8,7 @@ const crons = cronJobs();
 // Every day at 2:00 AM UTC
 crons.cron("daily gmail check", "0 2 * * *", internal.crons.runDailyGmailCheck, {});
 // Every day at 2:00 AM UTC
-crons.cron("daily analysis", "28 11 * * *", internal.crons.runDailyAnalysis, {});
+crons.cron("daily analysis", "0 4 * * *", internal.crons.runDailyAnalysis, {});
 // Every day at 5:00 AM UTC
 crons.cron("daily watcher creation", "0 5 * * *", internal.crons.runDailyWatcherCreation, {});
 
