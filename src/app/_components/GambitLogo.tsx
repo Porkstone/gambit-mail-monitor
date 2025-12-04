@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 interface GambitLogoProps {
   className?: string;
 }
@@ -5,9 +7,13 @@ interface GambitLogoProps {
 export function GambitLogo({ className }: GambitLogoProps) {
   return (
     <div className={`flex items-center gap-2 ${className || ""}`}>
-      <div className="w-8 h-8 bg-gray-900 rounded flex items-center justify-center">
-        <span className="text-white font-bold text-lg">G</span>
-      </div>
+      <Image
+        src="/GambitLogo128x128.png"
+        alt="Gambit Logo"
+        width={32}
+        height={32}
+        className="w-8 h-8"
+      />
       <span className="text-xl font-semibold text-gray-900">Gambit</span>
     </div>
   );
