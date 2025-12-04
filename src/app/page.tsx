@@ -17,29 +17,27 @@ import MessageCard from "./_components/messageCard";
 export default function Home() {
   return (
     <>
-      <main className="p-8 flex flex-col gap-8">
-        {/* If user is signed out, show the sign in form */}
-        <SignedOut>
+      {/* If user is signed out, show the sign in form */}
+      <SignedOut>
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-16">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Welcome and thanks for trying out Gambit mail monitor!
+            </h1>
+            <h2 className="text-2xl font-semibold text-gray-700 mb-8">
+              Please sign in to continue.
+            </h2>
+            <SignInForm />
+          </div>
+        </div>
+      </SignedOut>
 
-          <h1 className="text-4xl font-bold text-center">
-            Welcome and thanks for trying out Gambit mail monitor!
-          </h1>
-          <h2 className="text-2xl font-bold text-center">
-            Please sign in to continue.
-          </h2>
-          <SignInForm />
-        </SignedOut>
-
-        {/* If user is signed in, show the home page */}
-        <SignedIn>
-          <h1 className="text-4xl font-bold text-center">
-            Gambit
-          </h1>
-          
+      {/* If user is signed in, show the home page */}
+      <SignedIn>
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-12">
           <Content />
-        </SignedIn>
-
-      </main>
+        </div>
+      </SignedIn>
     </>
   );
 }
@@ -87,25 +85,25 @@ function Content() {
   const lastCheckAt = (gmailStatus as { lastGmailCheckAt?: number }).lastGmailCheckAt;
 
   return (
-    <div className="flex flex-col gap-8 max-w-lg mx-auto">
-      <div className="mx-auto bg-slate-200 dark:bg-slate-800 px-4 py-3 rounded-md">
-      <p>Welcome {viewer ?? "Anonymous"}!</p>
+    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+      <div className="bg-white border border-gray-200 rounded-lg px-6 py-4 shadow-sm">
+        <p className="text-gray-900 font-medium">Welcome {viewer ?? "Anonymous"}!</p>
       </div>
       
-      <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-md">
-        <h2 className="text-lg font-semibold mb-2">Gmail Connection</h2>
+      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <h2 className="text-lg font-semibold mb-4 text-gray-900">Gmail Connection</h2>
         {gmailStatus.connected ? (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-green-600 dark:text-green-400">
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-green-600">
               ✓ Gmail connected{gmailStatus.email ? ` (${gmailStatus.email})` : ""}
             </p>
             {typeof lastCheckAt === "number" ? (
-              <p className="text-xs text-slate-600 dark:text-slate-400">
+              <p className="text-xs text-gray-600">
                 Last check: {new Date(lastCheckAt).toLocaleString()}
               </p>
             ) : null}
             <button
-              className="bg-foreground text-background px-4 py-2 rounded-md text-sm hover:opacity-90 disabled:opacity-50"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={checking}
               onClick={async () => {
                 setChecking(true);
@@ -130,11 +128,11 @@ function Content() {
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            <p className="text-sm">Connect your Gmail account to monitor your emails.</p>
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-gray-700">Connect your Gmail account to monitor your emails.</p>
             <a
               href="/api/auth/gmail"
-              className="bg-foreground text-background px-4 py-2 rounded-md text-center text-sm hover:opacity-90"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-center text-sm font-medium transition-colors"
             >
               Connect Gmail
             </a>
@@ -143,11 +141,11 @@ function Content() {
       </div>
 
       {gmailStatus.connected && bookingMessages && bookingMessages.length > 0 && (
-        <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-md">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">Booking.com Emails</h2>
+        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Booking.com Emails</h2>
             <button
-              className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={analyzingAll}
               onClick={async () => {
                 setAnalyzingAll(true);

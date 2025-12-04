@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
-import { TopNav } from "./_components/topnav";
+import { Header } from "./_components/Header";
+import { Footer } from "./_components/Footer";
 import ExtensionBridge from "./_components/extensionBridge";
 
 const geistSans = Geist({
@@ -32,16 +33,17 @@ export default function RootLayout({
   return (
     <ClerkProvider dynamic>
       <ConvexClientProvider>
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <TopNav />
-            {children}
+        <html lang="en">
+          <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+            <Header />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <Footer />
             <ExtensionBridge />
-            
-        
-      </body>
-    </html>
-    </ConvexClientProvider>
+          </body>
+        </html>
+      </ConvexClientProvider>
     </ClerkProvider>
   );
 }

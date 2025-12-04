@@ -47,28 +47,28 @@ export default function MessageCard({ message }: MessageProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-3 rounded border border-slate-300 dark:border-slate-700">
-      <p className="font-semibold text-sm">{message.subject || "(No subject)"}</p>
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      <p className="font-semibold text-sm text-gray-900">{message.subject || "(No subject)"}</p>
       {message.isCancellationConfirmation === true ? (
-        <span className="inline-block mt-1 mr-2 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 align-middle">
+        <span className="inline-block mt-1 mr-2 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 align-middle">
           Cancellation
         </span>
       ) : null}
-      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+      <p className="text-xs text-gray-600 mt-1">
         From: {message.sender || "Unknown"}
       </p>
       {message.receivedAt ? (
-        <p className="text-xs text-slate-600 dark:text-slate-400">
+        <p className="text-xs text-gray-600">
           Date: {new Date(message.receivedAt).toLocaleString()}
         </p>
       ) : null}
 
       {message.subject ? (
-        <p className="text-xs mt-2 text-slate-700 dark:text-slate-300">{message.subject}</p>
+        <p className="text-xs mt-2 text-gray-700">{message.subject}</p>
       ) : null}
 
       <button
-        className="mt-2 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+        className="mt-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isAnalyzing}
         onClick={async () => {
           setIsAnalyzing(true);
@@ -91,7 +91,7 @@ export default function MessageCard({ message }: MessageProps) {
 
       {message.bodyHtml ? (
         <button
-          className="mt-2 ml-2 bg-slate-600 text-white px-3 py-1 rounded text-xs hover:bg-slate-700"
+          className="mt-2 ml-2 bg-gray-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-700 transition-colors"
           onClick={() => setShowPreview(!showPreview)}
         >
           {showPreview ? "Hide Preview" : "Preview"}
@@ -99,7 +99,7 @@ export default function MessageCard({ message }: MessageProps) {
       ) : null}
 
       <button
-        className="mt-2 ml-2 bg-rose-600 text-white px-3 py-1 rounded text-xs hover:bg-rose-700 disabled:opacity-50"
+        className="mt-2 ml-2 bg-rose-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isDeleting}
         onClick={async () => {
           setIsDeleting(true);
@@ -114,16 +114,16 @@ export default function MessageCard({ message }: MessageProps) {
       </button>
 
       {message.analysisError ? (
-        <div className="mt-2 p-2 bg-red-100 dark:bg-red-900 rounded text-xs text-red-800 dark:text-red-200">
+        <div className="mt-2 p-2 bg-red-100 rounded-lg text-xs text-red-800">
           Error: {message.analysisError}
         </div>
       ) : null}
 
       {message.isProcessed ? (
         message.isHotelBooking ? (
-          <div className="mt-2 p-2 bg-green-50 dark:bg-green-900 rounded text-xs">
-            <p className="font-semibold mb-1 text-green-800 dark:text-green-200">Analysis Results:</p>
-            <div className="space-y-1 text-green-700 dark:text-green-300">
+          <div className="mt-2 p-3 bg-green-50 rounded-lg text-xs">
+            <p className="font-semibold mb-2 text-green-800">Analysis Results:</p>
+            <div className="space-y-1 text-green-700">
               <p>
                 <strong>Hotel Booking:</strong> Yes
               </p>
@@ -169,13 +169,13 @@ export default function MessageCard({ message }: MessageProps) {
                     href={message.modifyBookingLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 inline-block"
+                    className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-700 transition-colors inline-block"
                   >
                     Start Cancellation
                   </a>
                 ) : (
                   <button
-                    className="bg-red-600 text-white px-3 py-1 rounded text-xs opacity-60"
+                    className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium opacity-60 cursor-not-allowed"
                     disabled
                   >
                     Start Cancellation
@@ -186,7 +186,7 @@ export default function MessageCard({ message }: MessageProps) {
             {message.isHotelBooking && message.isCancelable === true && !message.watcherId && message.hotelName && message.checkInDate && message.checkOutDate && message.totalCost && message.cancelableUntil && message.pinNumber && message.modifyBookingLink ? (
               <div className="mt-2">
                 <button
-                  className="bg-emerald-600 text-white px-3 py-1 rounded text-xs hover:bg-emerald-700 disabled:opacity-50"
+                  className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={creatingWatcher}
                   onClick={async () => {
                     setCreatingWatcher(true);
@@ -213,9 +213,9 @@ export default function MessageCard({ message }: MessageProps) {
             ) : null}
           </div>
         ) : (
-          <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded text-xs">
-            <p className="font-semibold mb-1 text-slate-800 dark:text-slate-200">Analysis Results:</p>
-            <div className="space-y-1 text-slate-700 dark:text-slate-300">
+          <div className="mt-2 p-3 bg-gray-100 rounded-lg text-xs">
+            <p className="font-semibold mb-2 text-gray-800">Analysis Results:</p>
+            <div className="space-y-1 text-gray-700">
               <p>
                 <strong>Hotel Booking:</strong> No
               </p>
@@ -227,7 +227,7 @@ export default function MessageCard({ message }: MessageProps) {
       {message.isCancellationConfirmation === true ? (
         <div className="mt-2">
           <button
-            className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 disabled:opacity-50"
+            className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={deactivating}
             onClick={async () => {
               setDeactivating(true);
@@ -269,7 +269,7 @@ export default function MessageCard({ message }: MessageProps) {
       ) : null}
 
       {showPreview && message.bodyHtml ? (
-        <div className="mt-2 border border-slate-200 dark:border-slate-700 rounded">
+        <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden">
           <iframe
             className="w-full h-64 bg-white"
             srcDoc={message.bodyHtml}
