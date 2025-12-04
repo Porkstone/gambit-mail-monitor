@@ -76,8 +76,8 @@ export const storeGmailTokens = mutation({
 export const getGmailConnectionStatus = query({
   args: {},
   returns: v.union(
-    v.object({ connected: v.literal(true), email: v.optional(v.string()) }),
-    v.object({ connected: v.literal(false) })
+    v.object({ connected: v.literal(true), email: v.optional(v.string()), lastGmailCheckAt: v.optional(v.number()) }),
+    v.object({ connected: v.literal(false), lastGmailCheckAt: v.optional(v.number()) })
   ),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -94,9 +94,8 @@ export const getGmailConnectionStatus = query({
       .unique();
 
     if (!user || !user.gmailAccessToken)
-      return { connected: false as const };
-
-    return { connected: true as const, email: user.email };
+      return { connected: false as const, lastGmailCheckAt: user?.lastGmailCheckAt };
+    return { connected: true as const, email: user.email, lastGmailCheckAt: user.lastGmailCheckAt };
   },
 });
 

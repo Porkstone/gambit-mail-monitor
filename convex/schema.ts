@@ -17,6 +17,7 @@ export default defineSchema({
     gmailAccessToken: v.optional(v.string()),
     gmailRefreshToken: v.optional(v.string()),
     gmailTokenExpiry: v.optional(v.number()),
+    lastGmailCheckAt: v.optional(v.number()),
   })
     .index("by_clerkUserId", ["clerkUserId"]) 
     .index("by_email", ["email"]),

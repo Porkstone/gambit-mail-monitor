@@ -49,6 +49,15 @@ export const updateAccessToken = internalMutation({
   },
 });
 
+export const setLastGmailCheck = internalMutation({
+  args: { userId: v.id("users"), at: v.number() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, { lastGmailCheckAt: args.at });
+    return null;
+  },
+});
+
 export const storeMessage = internalMutation({
   args: {
     userId: v.id("users"),

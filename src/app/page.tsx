@@ -84,6 +84,8 @@ function Content() {
     );
   }
 
+  const lastCheckAt = (gmailStatus as { lastGmailCheckAt?: number }).lastGmailCheckAt;
+
   return (
     <div className="flex flex-col gap-8 max-w-lg mx-auto">
       <div className="mx-auto bg-slate-200 dark:bg-slate-800 px-4 py-3 rounded-md">
@@ -97,6 +99,11 @@ function Content() {
             <p className="text-sm text-green-600 dark:text-green-400">
               ✓ Gmail connected{gmailStatus.email ? ` (${gmailStatus.email})` : ""}
             </p>
+            {typeof lastCheckAt === "number" ? (
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Last check: {new Date(lastCheckAt).toLocaleString()}
+              </p>
+            ) : null}
             <button
               className="bg-foreground text-background px-4 py-2 rounded-md text-sm hover:opacity-90 disabled:opacity-50"
               disabled={checking}

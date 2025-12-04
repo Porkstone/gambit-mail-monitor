@@ -228,6 +228,8 @@ export const checkBookingEmails = action({
     } catch (err) {
       console.error("[Gmail] Error:", err);
       return { success: false, newMessages: 0, error: String(err) };
+    } finally {
+      await ctx.runMutation(internal.gmailHelpers.setLastGmailCheck, { userId: user._id, at: Date.now() }).catch(() => undefined);
     }
   },
 });
@@ -402,6 +404,8 @@ export const checkBookingEmailsForUser = internalAction({
     } catch (err) {
       console.error("[Gmail] Error:", err);
       return { success: false, newMessages: 0, error: String(err) };
+    } finally {
+      await ctx.runMutation(internal.gmailHelpers.setLastGmailCheck, { userId: user._id, at: Date.now() }).catch(() => undefined);
     }
   },
 });
