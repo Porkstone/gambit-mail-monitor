@@ -22,7 +22,7 @@ export default function Home() {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-16">
           <div className="max-w-2xl mx-auto text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Welcome and thanks for trying out Gambit mail monitor!
+              Welcome and thanks for trying out Gambit AI travel assistant!
             </h1>
             <h2 className="text-2xl font-semibold text-gray-700 mb-8">
               Please sign in to continue.
